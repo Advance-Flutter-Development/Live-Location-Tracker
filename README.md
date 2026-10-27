@@ -128,8 +128,8 @@ These are **similar roles**, not exact equivalents.
 ## Setup
 
 ```bash
-flutter pub get
-flutter run
+flutter pub get/fvm flutter pub get
+flutter run/fvm flutter run
 ```
 
 Before showing Google Maps, configure the **Maps SDK for Android API key**. Before reading GPS, configure Android location permissions and request them at runtime. Run on an Android device or emulator with location services available.
