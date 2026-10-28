@@ -109,13 +109,13 @@ To save history, the repository also uses `location_database.dart`.
 
 | In GetX | In this project |
 | --- | --- |
-| `GetxController` | `Cubit<LocationState>` |
-| `.obs` / `Rx` variables | Fields in `LocationState` |
+| `GetxController` | `Cubit<LocationState> (OR) location_cubit.dart` |
+| `.obs` / `Rx` variables | Fields in `LocationState (OR) location_state.dart` |
 | Update `.value` | `emit(newState)` |
 | `Obx()` | `BlocBuilder` |
 | `Get.put()` | `BlocProvider` |
 | `Get.find()` | `context.read<T>()` (inside provider scope) |
-| Side effects/snackbars | `BlocListener` |
+| Side effects/snackbars | `BlocListener (action)` |
 
 These are **similar roles**, not exact equivalents.
 
