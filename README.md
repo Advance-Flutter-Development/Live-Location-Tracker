@@ -149,6 +149,6 @@ Before showing Google Maps, configure the **Maps SDK for Android API key**. Befo
 
 ## One-line memory trick
 
-**Page → Cubit → Repository → GPS/SQLite → Cubit emits State → UI rebuilds.**
+**Page(GPS)/history(or)old-route(SQLite) → Cubit → Repository → GPS/SQLite → Cubit emits State → UI rebuilds.**
 
 *Note: This structure is a learning-friendly choice, not a requirement of BLoC. It can be simplified or expanded as the app grows.*
