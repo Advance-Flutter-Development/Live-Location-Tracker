@@ -32,19 +32,4 @@ class LocationService {
 
     return true;
   }
-
-  Future<Position> getCurrentLocation() async {
-    // Check GPS and location permissions first.
-    await checkLocationPermission();
-
-    //Get device current position
-    final Position position = await Geolocator.getCurrentPosition(
-      locationSettings: const LocationSettings(
-        accuracy: LocationAccuracy.high,
-        timeLimit: Duration(seconds: 10),
-      ),
-    );
-
-    return position;
-  }
 }
