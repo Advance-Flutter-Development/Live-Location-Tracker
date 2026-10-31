@@ -1,154 +1,233 @@
-# Live Location Tracker 📍
+# Live Location Tracker — Step 5: Google Maps Integration
 
-A Flutter practice project to **show current GPS location on Google Maps, track movement, and save location history**.
+> **Branch:** Step 5 — Google Maps + Cubit  
+> **Goal:** Display Google Maps, fetch the phone's current GPS position, and move the map to that location.
 
-> **Goal:** Learn Cubit, GPS integration, Google Maps, SQLite, and clean project organization.  
-> **Scope (v1):** Android foreground tracking only. Background tracking is not included.
+## 1. Tech Stack & Packages
 
-## Features (planned)
+| Technology / Package | Use |
+|---|---|
+| Flutter + Dart | Android app and UI |
+| `flutter_bloc` | Cubit state management and `BlocConsumer` |
+| `equatable` | Compare location states |
+| `geolocator` | Location permissions and current GPS position |
+| `google_maps_flutter` | Google Map, marker, and camera movement |
+| Google Cloud Console | Configure Maps SDK for Android and API key |
 
-- Ask for location permission and check whether GPS is enabled.
-- Show current latitude/longitude on Google Maps.
-- Start/stop live location tracking.
-- Draw the traveled route and calculate distance.
-- Save tracking sessions locally and view history.
-- Handle permission errors and allow users to delete history.
+> Other packages installed for future steps (such as `sqflite`, `path`, and `intl`) are **not used in Step 5**.
 
-## Tech stack
+## 2. What We Completed
 
-| Technology / package | Why we use it |
-| --- | --- |
-| Flutter + Dart | Build the mobile app |
-| `flutter_bloc` (Cubit) | Manage location and tracking state |
-| `equatable` | Compare states easily |
-| `geolocator` | Get GPS position, location stream, and permissions |
-| `google_maps_flutter` | Display map, markers, and route polyline |
-| `sqflite` + `path` | Save location history on the device |
-| `intl` | Format dates and times |
-| `permission_handler` | Optional; Geolocator already handles basic location permissions |
+- [x] Displayed Google Maps inside `location_page.dart`.
+- [x] Configured Google Maps API key for Android.
+- [x] Kept the existing location permission checks.
+- [x] Fetched latitude, longitude, and accuracy through Cubit.
+- [x] Added a marker at the fetched location.
+- [x] Animated the map camera to the current location.
+- [x] Used `BlocConsumer` to show loading, success, and error feedback.
+- [x] Resolved a GPS timeout during testing by using medium accuracy and a longer timeout.
 
-**No backend or Firebase is needed for v1.** Google Maps requires a configured Maps SDK for Android API key and Google Cloud billing setup.
+**Not implemented yet:** continuous movement tracking, route polylines, distance calculation, and SQLite history.
 
-## Folder structure
+## 3. Simple Data Flow
+
+```text
+User taps "Get Current Location"
+              |
+              v
+      location_page.dart
+              |
+              v
+      location_cubit.dart
+       (loading state)
+              |
+              v
+    location_repository.dart
+              |
+              v
+      location_service.dart
+       (Geolocator GPS)
+              |
+              v
+      location_cubit.dart
+       emit(success/error)
+              |
+              v
+      BlocConsumer in page
+         /          \
+   listener        builder
+   moves map       draws marker,
+   + SnackBar      coordinates, loader
+```
+
+**Remember:** `Cubit` manages location state. The page owns `GoogleMapController` to control the map camera.
+
+## 4. Files Used / Changed
 
 ```text
 lib/
-├── main.dart
-├── core/
-│   ├── constants/
-│   └── utils/
-└── features/
-    └── location/
-        ├── data/
-        │   ├── models/
-        │   │   └── location_point_model.dart
-        │   ├── datasources/
-        │   │   ├── location_service.dart
-        │   │   └── location_database.dart
-        │   └── repositories/
-        │       └── location_repository.dart
-        └── presentation/
-            ├── cubit/
-            │   ├── location_cubit.dart
-            │   └── location_state.dart
-            ├── pages/
-            │   ├── location_page.dart
-            │   └── history_page.dart
-            └── widgets/
-                ├── tracking_controls.dart
-                └── location_info_card.dart
+├── main.dart                                # Provides LocationCubit
+└── features/location/
+    ├── data/
+    │   ├── datasources/
+    │   │   └── location_service.dart        # GPS permissions + getCurrentPosition()
+    │   └── repositories/
+    │       └── location_repository.dart     # Calls LocationService
+    └── presentation/
+        ├── cubit/
+        │   ├── location_cubit.dart          # Loading / success / failure emits
+        │   └── location_state.dart          # Status, Position, error message
+        └── pages/
+            └── location_page.dart           # GoogleMap, marker, camera, BlocConsumer
+
+android/app/
+├── build.gradle.kts                         # Maps API key manifest placeholder
+└── src/main/AndroidManifest.xml             # Location permissions + Maps API key
+
+pubspec.yaml                                 # google_maps_flutter dependency
 ```
 
-> This is the **planned structure**. Create files as features are implemented.
+| File | Step 5 change |
+|---|---|
+| `pubspec.yaml` | Added `google_maps_flutter` |
+| `AndroidManifest.xml` | Added Google Maps API metadata; kept location permissions |
+| `build.gradle.kts` | Reads `MAPS_API_KEY` environment variable for manifest placeholder |
+| `location_page.dart` | Replaced coordinates-only screen with Google Map and marker |
+| `location_service.dart` | Adjusted GPS accuracy and timeout during debugging |
+| `main.dart`, Cubit, State, Repository | Reused the Step 4 implementation; no new logic required |
 
-## What each folder/file does
+## 5. Google Cloud Console Setup
 
-| Folder / file | Simple explanation |
-| --- | --- |
-| `main.dart` | Starts the app and provides Cubit/dependencies. |
-| `core/constants/` | Shared constants, e.g. app settings. |
-| `core/utils/` | Shared helpers, e.g. distance formatting. |
-| `data/models/location_point_model.dart` | Shape of one GPS point: latitude, longitude, time. |
-| `data/datasources/location_service.dart` | Talks directly to Geolocator (GPS). |
-| `data/datasources/location_database.dart` | Talks directly to SQLite (save/read/delete). |
-| `data/repositories/location_repository.dart` | One place Cubit calls for location/history operations. |
-| `presentation/cubit/location_cubit.dart` | Handles actions: start, stop, get location; emits states. |
-| `presentation/cubit/location_state.dart` | Holds current UI data: coordinates, tracking status, errors. |
-| `presentation/pages/location_page.dart` | Main Google Maps screen. |
-| `presentation/pages/history_page.dart` | Shows saved tracking sessions. |
-| `presentation/widgets/tracking_controls.dart` | Reusable Start/Stop buttons. |
-| `presentation/widgets/location_info_card.dart` | Displays coordinates, distance, etc. |
+1. Open [Google Cloud Console](https://console.cloud.google.com/).
+2. Create or select a project (e.g. **Live Location Tracker**).
+3. Enable **billing** for the project.
+4. Go to **APIs & Services → Library** and enable **Maps SDK for Android**.
+5. Go to **APIs & Services → Credentials** and create an **API key**.
+6. Restrict the key:
+   - **Application restriction:** Android apps
+   - Enter your Android **application ID** and **SHA-1** certificate fingerprint.
+   - **API restriction:** Maps SDK for Android.
+7. Set a billing budget/alerts and monitor usage.
 
-### Remember these three layers
+### Find application ID
 
-- **Presentation:** What the user sees + Cubit state.
-- **Repository:** The middle layer Cubit talks to.
-- **Data sources:** Actual GPS and database calls.
+Open `android/app/build.gradle.kts` and find:
 
-## How data flows
+```kotlin
+defaultConfig {
+    applicationId = "com.example.live_location_tracker" // Example only
+}
+```
 
-When the user taps **Start Tracking**:
+### Find debug SHA-1 (Windows)
+
+From the project's `android` folder:
+
+```cmd
+cd android
+gradlew signingReport
+```
+
+Use the **debug** SHA-1 for debug builds. Release signing certificates can have different SHA-1 values.
+
+## 6. Android Configuration
+
+### `android/app/src/main/AndroidManifest.xml`
+
+Keep these inside `<manifest>` but **outside** `<application>`:
+
+```xml
+<uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+<uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+```
+
+Add this **inside** `<application>`:
+
+```xml
+<meta-data
+    android:name="com.google.android.geo.API_KEY"
+    android:value="${MAPS_API_KEY}" />
+```
+
+Keep all existing Flutter activity and manifest entries.
+
+### `android/app/build.gradle.kts`
+
+Inside the existing `defaultConfig` block:
+
+```kotlin
+manifestPlaceholders["MAPS_API_KEY"] =
+    System.getenv("MAPS_API_KEY") ?: ""
+```
+
+**Do not commit your actual API key.** Android Maps keys are bundled into the app, so Google Cloud application/API restrictions are important.
+
+## 7. Run the App (Windows CMD)
+
+From the project root:
+
+```cmd
+set "MAPS_API_KEY=YOUR_ACTUAL_API_KEY"
+flutter pub get
+flutter run
+```
+
+To verify the variable exists (avoid sharing the printed key):
+
+```cmd
+echo %MAPS_API_KEY%
+```
+
+**PowerShell alternative:**
+
+```powershell
+$env:MAPS_API_KEY="YOUR_ACTUAL_API_KEY"
+flutter run
+```
+
+> CMD uses `set`; PowerShell uses `$env:`. The environment variable is temporary for that terminal session. If the Gradle daemon was started before setting it, stop the daemon (`cd android && gradlew --stop`) and rebuild.
+
+## 8. GPS Timeout Fix
+
+**Problem seen:**
 
 ```text
-location_page.dart (button tapped)
-        ↓
-location_cubit.dart (startTracking)
-        ↓
-location_repository.dart
-        ↓
-location_service.dart (GPS stream)
-        ↓
-location_cubit.dart (emit new LocationState)
-        ↓
-BlocBuilder updates map and coordinates
+TimeoutException: Future not completed
 ```
 
-To save history, the repository also uses `location_database.dart`.
+**Working test configuration** in `location_service.dart`:
 
-## GetX → Cubit quick reference
-
-| In GetX | In this project |
-| --- | --- |
-| `GetxController` | `Cubit<LocationState> (OR) location_cubit.dart` |
-| `.obs` / `Rx` variables | Fields in `LocationState (OR) location_state.dart` |
-| Update `.value` | `emit(newState)` |
-| `Obx()` | `BlocBuilder` |
-| `Get.put()` | `BlocProvider` |
-| `Get.find()` | `context.read<T>()` (inside provider scope) |
-| Side effects/snackbars | `BlocListener (action)` |
-
-These are **similar roles**, not exact equivalents.
-
-**Cubit reminders:**
-- `BlocBuilder` → rebuild UI when state changes.
-- `BlocListener` → one-time effects such as SnackBars/navigation.
-- `BlocConsumer` → combines builder + listener.
-- `emit()` → sends a new state; avoid mutating the old state.
-
-## Setup
-
-```bash
-flutter pub get/fvm flutter pub get
-flutter run/fvm flutter run
+```dart
+final position = await Geolocator.getCurrentPosition(
+  locationSettings: const LocationSettings(
+    accuracy: LocationAccuracy.medium,
+    timeLimit: Duration(seconds: 30),
+  ),
+);
 ```
 
-Before showing Google Maps, configure the **Maps SDK for Android API key**. Before reading GPS, configure Android location permissions and request them at runtime. Run on an Android device or emulator with location services available.
+**Why it may help:** medium accuracy can return a location more quickly, and 30 seconds gives the device longer to obtain a fix. We changed both settings, so the exact cause of the earlier timeout is not confirmed.
 
-## Learning checklist
+For route tracking in Step 6, we will revisit accuracy and filter noisy readings.
 
-- [ ] Create Flutter project and install packages
-- [ ] Configure Android location permissions
-- [ ] Read current GPS location
-- [ ] Build `LocationCubit` + `LocationState`
-- [ ] Display location on Google Maps
-- [ ] Start/stop live location updates
-- [ ] Draw polyline and calculate distance
-- [ ] Save points/sessions to SQLite
-- [ ] Display and delete history
-- [ ] Test errors, write README updates, push to GitHub
+## 9. Quick Test Checklist
 
-## One-line memory trick
+- [ ] Map tiles load (not a blank map).
+- [ ] Phone location service is ON.
+- [ ] App location permission is granted (prefer **Precise** for testing).
+- [ ] Tap **Get Current Location**.
+- [ ] Loading indicator appears while fetching.
+- [ ] Latitude, longitude, and accuracy appear.
+- [ ] Map zooms to the current location and shows a marker.
+- [ ] GPS/permission errors show a SnackBar.
 
-**Page(GPS)/history(or)old-route(SQLite) → Cubit → Repository → GPS/SQLite → Cubit emits State → UI rebuilds.**
+## 10. Next Step
 
-*Note: This structure is a learning-friendly choice, not a requirement of BLoC. It can be simplified or expanded as the app grows.*
+**Step 6 — Live Tracking:** `Geolocator.getPositionStream()`, `StreamSubscription<Position>`, Start/Stop buttons, and map updates while moving.
+
+**Quick reminder:**
+
+```text
+Step 5 = One GPS position + Google Map
+Step 6 = Continuous GPS positions + live map updates
+```
