@@ -77,4 +77,13 @@ class LocationService {
       rethrow;
     }
   }
+
+  Stream<Position> getLiveLocationStream() {
+    const LocationSettings locationSettings = LocationSettings(
+      accuracy: LocationAccuracy.high,
+      distanceFilter: 10,
+    );
+
+    return Geolocator.getPositionStream(locationSettings: locationSettings);
+  }
 }

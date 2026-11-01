@@ -10,4 +10,12 @@ class LocationRepository {
   Future<Position> getCurrentLocation() async {
     return await locationService.getCurrentLocation();
   }
+
+  Future<bool> checkLocationPermission() {
+    return locationService.checkLocationPermission();
+  }
+
+  Stream<Position> getLiveLocationStream() {
+    return locationService.getLiveLocationStream();
+  }
 }

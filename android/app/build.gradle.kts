@@ -1,3 +1,15 @@
+import java.util.Properties
+import java.io.FileInputStream
+
+val localProperties = Properties()
+val localPropertiesFile = rootProject.file("local.properties")
+
+if (localPropertiesFile.exists()) {
+    FileInputStream(localPropertiesFile).use {
+        localProperties.load(it)
+    }
+}
+
 plugins {
     id("com.android.application")
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
@@ -29,7 +41,7 @@ android {
         versionName = flutter.versionName
 
         manifestPlaceholders["MAPS_API_KEY"] =
-        System.getenv("MAPS_API_KEY") ?: ""
+    localProperties.getProperty("MAPS_API_KEY", "")
     }
 
     buildTypes {

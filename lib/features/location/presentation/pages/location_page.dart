@@ -47,7 +47,7 @@ class _LocationPageState extends State<LocationPage> {
       body: BlocConsumer<LocationCubit, LocationState>(
         //i forget to add in step 4
         listenWhen: (previous, current) =>
-            previous.status != current.status &&
+            previous.position != current.position &&
             (current.status == LocationStatus.success ||
                 current.status == LocationStatus.failure),
         listener: (context, state) {
@@ -58,8 +58,8 @@ class _LocationPageState extends State<LocationPage> {
               ),
             );
           }
-          if (state.status == LocationStatus.success &&
-              state.position != null) {
+          if (state.position != null &&
+              state.status == LocationStatus.success) {
             final position = state.position!;
 
             moveCamera(LatLng(position.latitude, position.longitude));
@@ -86,8 +86,9 @@ class _LocationPageState extends State<LocationPage> {
                     moveCamera(currentLocation);
                   }
                 },
-                myLocationEnabled: state.status == LocationStatus.success,
-                myLocationButtonEnabled: state.status == LocationStatus.success,
+                myLocationEnabled: state.position != null,
+                // myLocationButtonEnabled: state.position != null,
+                myLocationButtonEnabled: false,
                 zoomControlsEnabled: false,
                 markers: {
                   if (currentLocation != null)
@@ -99,6 +100,27 @@ class _LocationPageState extends State<LocationPage> {
                 },
               ),
 
+              //Relocation Btn
+              Positioned(
+                right: 16,
+                bottom: 170, // Adjust based on your tracking card height
+                child: FloatingActionButton(
+                  heroTag: 'recenter_location',
+                  backgroundColor: Colors.white,
+                  mini: true,
+                  onPressed: () {
+                    final position = state.position;
+
+                    if (position != null) {
+                      moveCamera(LatLng(position.latitude, position.longitude));
+                    } else {
+                      context.read<LocationCubit>().getCurrentLocation();
+                    }
+                  },
+                  child: const Icon(Icons.my_location),
+                ),
+              ),
+
               // Location details
               if (state.status == LocationStatus.success && position != null)
                 Positioned(
@@ -106,6 +128,7 @@ class _LocationPageState extends State<LocationPage> {
                   left: 16,
                   right: 16,
                   child: Card(
+                    color: Colors.white.withValues(alpha: 0.9),
                     child: Padding(
                       padding: const EdgeInsets.all(16),
                       child: Column(
@@ -131,16 +154,77 @@ class _LocationPageState extends State<LocationPage> {
                 bottom: 30,
                 left: 20,
                 right: 20,
-                child: ElevatedButton.icon(
-                  onPressed: state.status == LocationStatus.loading
-                      ? null
-                      : () {
-                          context.read<LocationCubit>().getCurrentLocation();
-                        },
-                  icon: const Icon(Icons.my_location),
-                  label: const Text('Get Current Location'),
+                child: Card(
+                  child: Padding(
+                    padding: const EdgeInsets.all(10),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          state.isTracking
+                              ? 'Tracking Active'
+                              : 'Tracking Stopped',
+                        ),
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            //Current Location Btn
+                            // ElevatedButton(
+                            //   onPressed:
+                            //       state.isTracking ||
+                            //           state.status == LocationStatus.loading
+                            //       ? null
+                            //       : () {
+                            //           context
+                            //               .read<LocationCubit>()
+                            //               .getCurrentLocation();
+                            //         },
+                            //   child: const Text('Current'),
+                            // ),
+
+                            // const SizedBox(height: 8),
+
+                            //Start Tracking Btn
+                            Expanded(
+                              child: ElevatedButton.icon(
+                                onPressed:
+                                    state.isTracking ||
+                                        state.status == LocationStatus.loading
+                                    ? null
+                                    : () {
+                                        context
+                                            .read<LocationCubit>()
+                                            .startTracking();
+                                      },
+                                icon: const Icon(Icons.play_arrow),
+                                label: const Text('Start'),
+                              ),
+                            ),
+
+                            const SizedBox(width: 8),
+
+                            //Stop Tracking Btn
+                            Expanded(
+                              child: ElevatedButton.icon(
+                                onPressed: !state.isTracking
+                                    ? null
+                                    : () {
+                                        context
+                                            .read<LocationCubit>()
+                                            .stopTracking();
+                                      },
+                                icon: const Icon(Icons.stop),
+                                label: const Text('Stop'),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
               ),
+
               // SafeArea(
               //   child: Center(
               //     child: Column(
