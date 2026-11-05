@@ -1,6 +1,8 @@
 import 'package:flutter/foundation.dart';
 import 'package:geolocator/geolocator.dart';
 
+// import 'package:geolocator_android/geolocator_android.dart';
+
 class LocationService {
   Future<bool> checkLocationPermission() async {
     //Step1: Check whether GPS/Location service are enabled
@@ -61,7 +63,7 @@ class LocationService {
     try {
       final position = await Geolocator.getCurrentPosition(
         locationSettings: const LocationSettings(
-          accuracy: LocationAccuracy.medium,
+          accuracy: LocationAccuracy.high,
           timeLimit: Duration(seconds: 30),
         ),
       );
@@ -79,11 +81,38 @@ class LocationService {
   }
 
   Stream<Position> getLiveLocationStream() {
-    const LocationSettings locationSettings = LocationSettings(
-      accuracy: LocationAccuracy.high,
-      distanceFilter: 10,
-    );
+    // const LocationSettings locationSettings = LocationSettings(
+    //   accuracy: LocationAccuracy.high,
+    //   timeLimit: Duration(seconds: 30),
+    //   // distanceFilter: 10,
+    // );
 
-    return Geolocator.getPositionStream(locationSettings: locationSettings);
+    // return Geolocator.getPositionStream(locationSettings: locationSettings);
+
+    try {
+      final position = Geolocator.getPositionStream(
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.high,
+          timeLimit: Duration(seconds: 30),
+        ),
+      );
+
+      //Android-specific settings for location updates->but high battery consumption
+      // final settings = AndroidSettings(
+      //   accuracy: LocationAccuracy.best,
+      //   distanceFilter: 0,
+      //   intervalDuration: Duration(seconds: 2),
+      // );
+
+      // debugPrint("GPS SUCCESS!");
+      // debugPrint("Latitude: ${position.latitude}");
+      // debugPrint("Longitude: ${position.longitude}");
+      // debugPrint("Accuracy: ${position.accuracy}");
+
+      return position;
+    } catch (e) {
+      debugPrint("getLiveLocationStream- GPS FAILED: $e");
+      rethrow;
+    }
   }
 }
